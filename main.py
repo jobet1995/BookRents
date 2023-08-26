@@ -1,5 +1,4 @@
 import http.server
-import sqlite3
 from urllib.parse import parse_qs
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
@@ -14,80 +13,79 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             with open('index.html', 'r') as file:
                 index_page = file.read()
 
-            books = self.fetch_books()
-            book_list = self.render_book_list(books)
-            index_page = index_page.replace("<!-- Book list will be dynamically populated here -->", book_list)
             self.wfile.write(index_page.encode())
-        elif self.path == '/add_book':
+        elif self.path == '/login':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
 
-            add_book_form = self.render_add_book_form()
-            self.wfile.write(add_book_form.encode())
+            login_page = self.render_login_page()
+            self.wfile.write(login_page.encode())
+        elif self.path == '/register':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+            register_page = self.render_register_page()
+            self.wfile.write(register_page.encode())
+        elif self.path == '/forgot_password':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+            forgot_password_page = self.render_forgot_password_page()
+            self.wfile.write(forgot_password_page.encode())
         else:
             self.send_response(404)
             self.end_headers()
 
     def do_POST(self):
-        if self.path == '/add_book':
+        if self.path == '/login':
             content_length = int(self.headers['Content-Length'])
             data = self.rfile.read(content_length)
-            book_data = parse_qs(data.decode())
-            self.create_book(book_data)
+            login_data = parse_qs(data.decode())
 
-            self.send_response(302)  # Redirect after POST
+            # Process login data
+            
+            self.send_response(302)
             self.send_header('Location', '/')
+            self.end_headers()
+        elif self.path == '/register':
+            content_length = int(self.headers['Content-Length'])
+            data = self.rfile.read(content_length)
+            register_data = parse_qs(data.decode())
+            
+            # Process registration data
+            
+            self.send_response(302)
+            self.send_header('Location', '/login')
+            self.end_headers()
+        elif self.path == '/forgot_password':
+            content_length = int(self.headers['Content-Length'])
+            data = self.rfile.read(content_length)
+            forgot_password_data = parse_qs(data.decode())
+            
+            # Process password recovery data
+            
+            self.send_response(302)
+            self.send_header('Location', '/login')
             self.end_headers()
         else:
             self.send_response(404)
             self.end_headers()
 
-    def fetch_books(self):
-        connection = sqlite3.connect(self.db_path)
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM Book")
-        books = cursor.fetchall()
-        connection.close()
-        return books
-
-    def create_book(self, book_data):
-        connection = sqlite3.connect(self.db_path)
-        cursor = connection.cursor()
-        query = "INSERT INTO Book (title, author, isbn, genre, publication_date, price) VALUES (?, ?, ?, ?, ?, ?)"
-        cursor.execute(query, (
-            book_data['title'][0],
-            book_data['author'][0],
-            book_data['isbn'][0],
-            book_data['genre'][0],
-            book_data['publication_date'][0],
-            book_data['price'][0]
-        ))
-        connection.commit()
-        connection.close()
-
-    def render_book_list(self, books):
-        book_list_html = """
-        <ul>
-            {}
-        </ul>
-        """
-
-        book_list_items = ""
-        for book in books:
-            book_list_items += f"<li>{book[1]} by {book[2]}</li>"
-
-        return book_list_html.format(book_list_items)
-
-    def render_add_book_form(self):
-        with open("add_book.html", "r") as file:
+    def render_login_page(self):
+        with open('login.html', 'r') as file:
             return file.read()
 
-def main():
-    server_address = ('', 8000)
-    httpd = http.server.HTTPServer(server_address, RequestHandler)
-    print("Server running at http://localhost:8000")
-    httpd.serve_forever()
+    def render_register_page(self):
+        with open('register.html', 'r') as file:
+            return file.read()
+
+    def render_forgot_password_page(self):
+        with open('forgot_password.html', 'r') as file:
+            return file.read()
 
 if __name__ == '__main__':
     main()
+              
